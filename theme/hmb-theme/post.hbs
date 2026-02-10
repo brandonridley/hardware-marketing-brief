@@ -1,0 +1,39 @@
+{{!< default}}
+
+<article class="post-full">
+    <header class="post-header">
+        <div class="section-inner section-narrow">
+            <div class="post-meta">
+                <time datetime="{{date format="YYYY-MM-DD"}}">{{date format="MMMM D, YYYY"}}</time>
+                {{#if primary_tag}}
+                <span class="post-tag">{{primary_tag.name}}</span>
+                {{/if}}
+            </div>
+            <h1 class="post-title">{{title}}</h1>
+            {{#if custom_excerpt}}
+            <p class="post-excerpt">{{custom_excerpt}}</p>
+            {{/if}}
+        </div>
+    </header>
+
+    {{#if feature_image}}
+    <figure class="post-feature-image">
+        <img src="{{feature_image}}" alt="{{title}}">
+    </figure>
+    {{/if}}
+
+    <div class="post-content section-inner section-narrow">
+        {{content}}
+    </div>
+
+    {{#if @member}}
+    {{else}}
+    <div class="post-paywall section-inner section-narrow">
+        <div class="paywall-card">
+            <h3>🔒 This section is for paid subscribers</h3>
+            <p>Get the full funding table, marketing teardown, and data section for just $2/mo.</p>
+            <a href="javascript:void(0)" data-portal="signup" class="btn btn-primary">Unlock Full Access →</a>
+        </div>
+    </div>
+    {{/if}}
+</article>

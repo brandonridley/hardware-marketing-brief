@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="{{@site.locale}}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{meta_title}}</title>
+    {{ghost_head}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{asset "css/style.css"}}">
+</head>
+<body class="{{body_class}}">
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="{{@site.url}}" class="nav-logo">
+                <span class="nav-logo-icon">⚡</span>
+                <span class="nav-logo-text">The Hardware Marketing Brief</span>
+            </a>
+            <div class="nav-links">
+                {{#unless @member}}
+                    <a href="#subscribe" class="nav-link">Subscribe</a>
+                    <a href="#pricing" class="btn btn-primary btn-sm">Get Access</a>
+                {{else}}
+                    <a href="{{@site.url}}/account" class="nav-link">Account</a>
+                {{/unless}}
+            </div>
+        </div>
+    </nav>
+
+    <main class="site-main">
+        {{{body}}}
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="nav-logo-icon">⚡</span> The Hardware Marketing Brief
+            </div>
+            <p class="footer-tagline">Weekly intelligence for hardware startup founders & marketing leaders.</p>
+            <p class="footer-sub">A <a href="https://themarketizer.com" target="_blank">Marketizer</a> publication.</p>
+            <p class="footer-copy">&copy; {{date format="YYYY"}} The Hardware Marketing Brief. All rights reserved.</p>
+        </div>
+    </footer>
+
+    {{ghost_foot}}
+</body>
+</html>

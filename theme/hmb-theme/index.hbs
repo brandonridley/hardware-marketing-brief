@@ -1,0 +1,157 @@
+{{!< default}}
+
+{{#unless @member}}
+{{!-- HERO SECTION --}}
+<section class="hero">
+    <div class="hero-inner">
+        <div class="hero-badge">📡 Every Tuesday at 7am ET</div>
+        <h1 class="hero-title">The intelligence edge for<br><span class="gradient-text">hardware startup leaders</span></h1>
+        <p class="hero-subtitle">Funding rounds. Go-to-market teardowns. Competitive benchmarks. One weekly brief that keeps hardware founders and marketing leaders ahead of the curve.</p>
+        <div class="hero-cta" id="subscribe">
+            <form class="subscribe-form" data-members-form="subscribe">
+                <input class="subscribe-input" type="email" data-members-email placeholder="your@email.com" required>
+                <button class="btn btn-primary btn-lg" type="submit">Subscribe Free →</button>
+            </form>
+            <p class="hero-note">Free tier gets you the lead story every week. Upgrade anytime.</p>
+        </div>
+        <div class="hero-stats">
+            <div class="stat">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Funding rounds tracked weekly</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">1</div>
+                <div class="stat-label">GTM teardown per issue</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">7min</div>
+                <div class="stat-label">Average read time</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{!-- WHAT YOU GET --}}
+<section class="section">
+    <div class="section-inner">
+        <h2 class="section-title">What's inside every issue</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Lead Story</h3>
+                <p>Deep analysis of a trend, company, or inflection point shaping hardware startups right now.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <h3>Funding Intel</h3>
+                <p>This week's hardware funding rounds — who raised, how much, from whom, and what it signals.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Marketing Teardown</h3>
+                <p>One company's go-to-market strategy dissected. What's working, what's not, and what you can steal.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Data & Benchmarks</h3>
+                <p>Hard numbers on CAC, conversion rates, channel performance, and market sizing.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Personal Take</h3>
+                <p>Brandon's unfiltered perspective from the trenches of hardware marketing.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Quick Hits</h3>
+                <p>Links, tools, job moves, and signals you should have on your radar this week.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{!-- PRICING --}}
+<section class="section section-dark" id="pricing">
+    <div class="section-inner">
+        <h2 class="section-title">Choose your level</h2>
+        <p class="section-subtitle">Start free. Upgrade when you're hooked.</p>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="pricing-tier">Free</div>
+                <div class="pricing-price">$0</div>
+                <div class="pricing-period">forever</div>
+                <ul class="pricing-features">
+                    <li>✓ Lead story every Tuesday</li>
+                    <li>✓ Top 5 funding rounds</li>
+                    <li>✓ Personal take section</li>
+                    <li class="muted">✗ Full funding intel table</li>
+                    <li class="muted">✗ Marketing teardown</li>
+                    <li class="muted">✗ Data & benchmarks</li>
+                    <li class="muted">✗ Archive access</li>
+                </ul>
+                <a href="javascript:void(0)" data-portal="signup/free" class="btn btn-outline btn-block">Subscribe Free</a>
+            </div>
+            <div class="pricing-card pricing-card-featured">
+                <div class="pricing-badge">Most Popular</div>
+                <div class="pricing-tier">Pro</div>
+                <div class="pricing-price">$2<span class="pricing-unit">/mo</span></div>
+                <div class="pricing-period">or $20/year (save 17%)</div>
+                <ul class="pricing-features">
+                    <li>✓ Everything in Free</li>
+                    <li>✓ Full funding intel table</li>
+                    <li>✓ Weekly marketing teardown</li>
+                    <li>✓ Data & benchmarks section</li>
+                    <li>✓ Full archive access</li>
+                    <li>✓ Early access to reports</li>
+                    <li>✓ Community Discord</li>
+                </ul>
+                <a href="javascript:void(0)" data-portal="signup" class="btn btn-primary btn-block">Get Full Access →</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{!-- ABOUT --}}
+<section class="section">
+    <div class="section-inner section-narrow">
+        <h2 class="section-title">Who writes this?</h2>
+        <div class="about-card">
+            <div class="about-content">
+                <p><strong>Brandon Ridley</strong> has built and marketed hardware products from concept to shelf. He's run GTM for Series B startups, managed seven-figure marketing budgets, and consulted for dozens of hardware companies on their go-to-market strategy.</p>
+                <p>The Hardware Marketing Brief is the newsletter he wished existed when he was building his first hardware product — real intel, no fluff, written by someone who's actually done it.</p>
+                <p class="about-cta">Need hands-on help? Check out <a href="https://themarketizer.com" target="_blank">The Marketizer</a> — fractional CMO services for hardware startups.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{else}}
+
+{{!-- LOGGED IN: Show posts --}}
+<section class="section">
+    <div class="section-inner">
+        <h2 class="section-title">Latest Issues</h2>
+        <div class="post-feed">
+            {{#foreach posts}}
+            <article class="post-card">
+                {{#if feature_image}}
+                <a href="{{url}}" class="post-card-image" style="background-image: url({{feature_image}})"></a>
+                {{/if}}
+                <div class="post-card-content">
+                    <div class="post-card-meta">
+                        <time datetime="{{date format="YYYY-MM-DD"}}">{{date format="MMM D, YYYY"}}</time>
+                        {{#if access}}
+                        {{else}}
+                        <span class="post-card-badge">Pro</span>
+                        {{/if}}
+                    </div>
+                    <h3 class="post-card-title"><a href="{{url}}">{{title}}</a></h3>
+                    <p class="post-card-excerpt">{{excerpt words="30"}}</p>
+                </div>
+            </article>
+            {{/foreach}}
+        </div>
+    </div>
+</section>
+
+{{/unless}}

@@ -1,0 +1,75 @@
+{
+  "name": "HMB - TechCrunch Hardware Funding Scraper",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 6 * * *" }]
+        }
+      },
+      "id": "tc-trigger",
+      "name": "Daily 6am ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/category/hardware/feed/",
+        "options": { "response": { "response": { "responseFormat": "text" } } }
+      },
+      "id": "tc-fetch-rss",
+      "name": "Fetch TC Hardware RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "mode": "xmlToJson",
+        "dataPropertyName": "data"
+      },
+      "id": "tc-parse-xml",
+      "name": "Parse RSS XML",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  try {\n    const rss = item.json.data?.rss?.channel?.[0]?.item || item.json.rss?.channel?.[0]?.item || [];\n    for (const entry of rss) {\n      const title = (entry.title?.[0] || entry.title || '').toString();\n      const link = (entry.link?.[0] || entry.link || '').toString();\n      const pubDate = (entry.pubDate?.[0] || entry.pubDate || '').toString();\n      const desc = (entry.description?.[0] || entry.description || '').toString();\n      \n      // Filter for funding/raise keywords\n      const text = (title + ' ' + desc).toLowerCase();\n      const isFunding = /\\b(rais|fund|seed|series [a-f]|venture|invest|million|\\$\\d|capital|backing|round)\\b/i.test(text);\n      const isHardware = /\\b(hardware|robot|drone|sensor|chip|semiconductor|device|manufact|iot|wearable|ev |electric vehicle|3d print|lidar|battery|energy|clean ?tech)\\b/i.test(text);\n      \n      results.push({\n        json: {\n          source: 'TechCrunch',\n          title: title,\n          url: link,\n          published: pubDate,\n          description: desc.replace(/<[^>]*>/g, '').substring(0, 500),\n          is_funding: isFunding,\n          is_hardware: isHardware,\n          relevant: isFunding || isHardware,\n          scraped_at: new Date().toISOString()\n        }\n      });\n    }\n  } catch(e) {\n    results.push({ json: { error: e.message } });\n  }\n}\n\nreturn results.filter(r => r.json.relevant);"
+      },
+      "id": "tc-filter",
+      "name": "Filter Hardware & Funding",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "__rl": true, "mode": "list", "value": "" },
+        "sheetName": { "__rl": true, "mode": "list", "value": "" },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "tc-sheets",
+      "name": "Save to Google Sheets (Configure)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1120, 300],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Daily 6am ET": { "main": [[{ "node": "Fetch TC Hardware RSS", "type": "main", "index": 0 }]] },
+    "Fetch TC Hardware RSS": { "main": [[{ "node": "Parse RSS XML", "type": "main", "index": 0 }]] },
+    "Parse RSS XML": { "main": [[{ "node": "Filter Hardware & Funding", "type": "main", "index": 0 }]] },
+    "Filter Hardware & Funding": { "main": [[{ "node": "Save to Google Sheets (Configure)", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "HMB" }]
+}

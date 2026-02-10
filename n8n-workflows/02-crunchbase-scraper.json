@@ -1,0 +1,128 @@
+{
+  "name": "HMB - Crunchbase Hardware Funding Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 7 * * *" }]
+        }
+      },
+      "id": "cb-trigger",
+      "name": "Daily 7am ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://news.crunchbase.com/feed/",
+        "options": { "response": { "response": { "responseFormat": "text" } } }
+      },
+      "id": "cb-fetch-news",
+      "name": "Fetch Crunchbase News RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "mode": "xmlToJson",
+        "dataPropertyName": "data"
+      },
+      "id": "cb-parse-xml",
+      "name": "Parse RSS",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\nconst hardwareKeywords = /\\b(hardware|robot|drone|sensor|chip|semiconductor|device|manufact|iot|wearable|ev |electric vehicle|3d print|lidar|battery|energy|clean ?tech|aerospace|space|automotive|mobility|industrial|medical device|biotech|agri ?tech|climate|deeptech|deep tech)\\b/i;\n\nfor (const item of items) {\n  try {\n    const feed = item.json.data?.rss?.channel?.[0]?.item || item.json.rss?.channel?.[0]?.item || [];\n    for (const entry of feed) {\n      const title = (entry.title?.[0] || entry.title || '').toString();\n      const link = (entry.link?.[0] || entry.link || '').toString();\n      const pubDate = (entry.pubDate?.[0] || entry.pubDate || '').toString();\n      const desc = (entry.description?.[0] || entry.description || '').toString();\n      const text = (title + ' ' + desc).toLowerCase();\n      \n      if (hardwareKeywords.test(text)) {\n        // Try to extract funding amount\n        const amountMatch = text.match(/\\$(\\d+(?:\\.\\d+)?\\s*(?:m|b|million|billion))/i);\n        const seriesMatch = text.match(/series\\s+([a-f])/i);\n        const seedMatch = /\\bseed\\b/i.test(text);\n        \n        results.push({\n          json: {\n            source: 'Crunchbase News',\n            title: title,\n            url: link,\n            published: pubDate,\n            description: desc.replace(/<[^>]*>/g, '').substring(0, 500),\n            funding_amount: amountMatch ? '$' + amountMatch[1] : 'Unknown',\n            round_type: seriesMatch ? 'Series ' + seriesMatch[1].toUpperCase() : (seedMatch ? 'Seed' : 'Unknown'),\n            scraped_at: new Date().toISOString()\n          }\n        });\n      }\n    }\n  } catch(e) {\n    results.push({ json: { error: e.message } });\n  }\n}\n\nreturn results;"
+      },
+      "id": "cb-filter",
+      "name": "Filter & Extract Funding",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/tag/funding/feed/",
+        "options": { "response": { "response": { "responseFormat": "text" } } }
+      },
+      "id": "cb-fetch-tc-funding",
+      "name": "Fetch TC Funding RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 500]
+    },
+    {
+      "parameters": {
+        "mode": "xmlToJson",
+        "dataPropertyName": "data"
+      },
+      "id": "cb-parse-tc",
+      "name": "Parse TC Funding RSS",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Same hardware filter for TC funding feed\nconst items = $input.all();\nconst results = [];\nconst hardwareKeywords = /\\b(hardware|robot|drone|sensor|chip|semiconductor|device|manufact|iot|wearable|ev |electric vehicle|3d print|lidar|battery|energy|clean ?tech|aerospace|space|automotive|mobility|industrial|medical device|deeptech|deep tech)\\b/i;\n\nfor (const item of items) {\n  try {\n    const feed = item.json.data?.rss?.channel?.[0]?.item || item.json.rss?.channel?.[0]?.item || [];\n    for (const entry of feed) {\n      const title = (entry.title?.[0] || entry.title || '').toString();\n      const link = (entry.link?.[0] || entry.link || '').toString();\n      const pubDate = (entry.pubDate?.[0] || entry.pubDate || '').toString();\n      const desc = (entry.description?.[0] || entry.description || '').toString();\n      const text = (title + ' ' + desc);\n      \n      if (hardwareKeywords.test(text)) {\n        const amountMatch = text.match(/\\$(\\d+(?:\\.\\d+)?\\s*(?:M|B|million|billion))/i);\n        const seriesMatch = text.match(/[Ss]eries\\s+([A-Fa-f])/i);\n        const seedMatch = /\\bseed\\b/i.test(text);\n        \n        results.push({\n          json: {\n            source: 'TechCrunch Funding',\n            title: title,\n            url: link,\n            published: pubDate,\n            description: desc.replace(/<[^>]*>/g, '').substring(0, 500),\n            funding_amount: amountMatch ? '$' + amountMatch[1] : 'Unknown',\n            round_type: seriesMatch ? 'Series ' + seriesMatch[1].toUpperCase() : (seedMatch ? 'Seed' : 'Unknown'),\n            scraped_at: new Date().toISOString()\n          }\n        });\n      }\n    }\n  } catch(e) {\n    results.push({ json: { error: e.message } });\n  }\n}\n\nreturn results;"
+      },
+      "id": "cb-filter-tc",
+      "name": "Filter TC Hardware Funding",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      },
+      "id": "cb-merge",
+      "name": "Merge All Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Deduplicate by URL and sort by date\nconst items = $input.all();\nconst seen = new Set();\nconst unique = [];\n\nfor (const item of items) {\n  const url = item.json.url;\n  if (!seen.has(url)) {\n    seen.add(url);\n    unique.push(item);\n  }\n}\n\n// Sort by published date descending\nunique.sort((a, b) => new Date(b.json.published) - new Date(a.json.published));\n\nreturn unique;"
+      },
+      "id": "cb-dedup",
+      "name": "Deduplicate & Sort",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "options": {
+          "fileName": "={{ 'hmb-funding-' + new Date().toISOString().split('T')[0] + '.json' }}"
+        }
+      },
+      "id": "cb-save",
+      "name": "Save to File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [1560, 400],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Daily 7am ET": { "main": [[{ "node": "Fetch Crunchbase News RSS", "type": "main", "index": 0 }, { "node": "Fetch TC Funding RSS", "type": "main", "index": 0 }]] },
+    "Fetch Crunchbase News RSS": { "main": [[{ "node": "Parse RSS", "type": "main", "index": 0 }]] },
+    "Parse RSS": { "main": [[{ "node": "Filter & Extract Funding", "type": "main", "index": 0 }]] },
+    "Filter & Extract Funding": { "main": [[{ "node": "Merge All Sources", "type": "main", "index": 0 }]] },
+    "Fetch TC Funding RSS": { "main": [[{ "node": "Parse TC Funding RSS", "type": "main", "index": 0 }]] },
+    "Parse TC Funding RSS": { "main": [[{ "node": "Filter TC Hardware Funding", "type": "main", "index": 0 }]] },
+    "Filter TC Hardware Funding": { "main": [[{ "node": "Merge All Sources", "type": "main", "index": 1 }]] },
+    "Merge All Sources": { "main": [[{ "node": "Deduplicate & Sort", "type": "main", "index": 0 }]] },
+    "Deduplicate & Sort": { "main": [[{ "node": "Save to File", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "HMB" }]
+}

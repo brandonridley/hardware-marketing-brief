@@ -1,0 +1,134 @@
+{
+  "name": "HMB - LinkedIn & Industry News Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * *" }]
+        }
+      },
+      "id": "li-trigger",
+      "name": "Daily 8am ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=hardware+startup+funding+when:7d&hl=en-US&gl=US&ceid=US:en",
+        "options": { "response": { "response": { "responseFormat": "text" } } }
+      },
+      "id": "li-google-news",
+      "name": "Google News - Hardware Funding",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=robotics+startup+raised+OR+funding+when:7d&hl=en-US&gl=US&ceid=US:en",
+        "options": { "response": { "response": { "responseFormat": "text" } } }
+      },
+      "id": "li-google-robotics",
+      "name": "Google News - Robotics Funding",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=%22series+a%22+OR+%22series+b%22+hardware+OR+deeptech+OR+climatetech+when:7d&hl=en-US&gl=US&ceid=US:en",
+        "options": { "response": { "response": { "responseFormat": "text" } } }
+      },
+      "id": "li-google-series",
+      "name": "Google News - Series A/B Deep Tech",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 600]
+    },
+    {
+      "parameters": { "mode": "xmlToJson", "dataPropertyName": "data" },
+      "id": "li-parse1",
+      "name": "Parse 1",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [680, 200]
+    },
+    {
+      "parameters": { "mode": "xmlToJson", "dataPropertyName": "data" },
+      "id": "li-parse2",
+      "name": "Parse 2",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [680, 400]
+    },
+    {
+      "parameters": { "mode": "xmlToJson", "dataPropertyName": "data" },
+      "id": "li-parse3",
+      "name": "Parse 3",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      },
+      "id": "li-merge",
+      "name": "Merge Feeds",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      },
+      "id": "li-merge2",
+      "name": "Merge All",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\nconst seen = new Set();\n\nfor (const item of items) {\n  try {\n    const feed = item.json.data?.rss?.channel?.[0]?.item || item.json.rss?.channel?.[0]?.item || [];\n    for (const entry of (Array.isArray(feed) ? feed : [feed])) {\n      const title = (entry.title?.[0] || entry.title || '').toString();\n      const link = (entry.link?.[0] || entry.link || '').toString();\n      const pubDate = (entry.pubDate?.[0] || entry.pubDate || '').toString();\n      const source = (entry.source?.[0]?._ || entry.source?.[0] || 'Unknown').toString();\n      \n      if (!seen.has(title)) {\n        seen.add(title);\n        \n        const text = title.toLowerCase();\n        const amountMatch = text.match(/\\$(\\d+(?:\\.\\d+)?\\s*(?:m|b|million|billion))/i);\n        const seriesMatch = text.match(/series\\s+([a-f])/i);\n        \n        results.push({\n          json: {\n            source: 'Google News / ' + source,\n            title: title,\n            url: link,\n            published: pubDate,\n            funding_amount: amountMatch ? '$' + amountMatch[1] : null,\n            round_type: seriesMatch ? 'Series ' + seriesMatch[1].toUpperCase() : null,\n            scraped_at: new Date().toISOString()\n          }\n        });\n      }\n    }\n  } catch(e) { /* skip */ }\n}\n\nresults.sort((a, b) => new Date(b.json.published) - new Date(a.json.published));\nreturn results.slice(0, 50);"
+      },
+      "id": "li-process",
+      "name": "Deduplicate & Extract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "subject": "=HMB Intel Digest - {{ $now.format('yyyy-MM-dd') }}",
+        "message": "=<h2>Hardware Funding Intel - {{ $now.format('yyyy-MM-dd') }}</h2><table border='1' cellpadding='8'><tr><th>Source</th><th>Title</th><th>Amount</th><th>Round</th></tr>{{ $input.all().map(i => `<tr><td>${i.json.source}</td><td><a href='${i.json.url}'>${i.json.title}</a></td><td>${i.json.funding_amount || '-'}</td><td>${i.json.round_type || '-'}</td></tr>`).join('') }}</table>",
+        "toEmail": "admin@ridleyserver.com",
+        "options": {}
+      },
+      "id": "li-email",
+      "name": "Email Digest (Configure SMTP)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1340, 400],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Daily 8am ET": { "main": [[{ "node": "Google News - Hardware Funding", "type": "main", "index": 0 }, { "node": "Google News - Robotics Funding", "type": "main", "index": 0 }, { "node": "Google News - Series A/B Deep Tech", "type": "main", "index": 0 }]] },
+    "Google News - Hardware Funding": { "main": [[{ "node": "Parse 1", "type": "main", "index": 0 }]] },
+    "Google News - Robotics Funding": { "main": [[{ "node": "Parse 2", "type": "main", "index": 0 }]] },
+    "Google News - Series A/B Deep Tech": { "main": [[{ "node": "Parse 3", "type": "main", "index": 0 }]] },
+    "Parse 1": { "main": [[{ "node": "Merge Feeds", "type": "main", "index": 0 }]] },
+    "Parse 2": { "main": [[{ "node": "Merge Feeds", "type": "main", "index": 1 }]] },
+    "Merge Feeds": { "main": [[{ "node": "Merge All", "type": "main", "index": 0 }]] },
+    "Parse 3": { "main": [[{ "node": "Merge All", "type": "main", "index": 1 }]] },
+    "Merge All": { "main": [[{ "node": "Deduplicate & Extract", "type": "main", "index": 0 }]] },
+    "Deduplicate & Extract": { "main": [[{ "node": "Email Digest (Configure SMTP)", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "HMB" }]
+}

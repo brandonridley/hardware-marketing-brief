@@ -1,0 +1,67 @@
+services:
+  ghost:
+    image: ghost:5-alpine
+    container_name: hmb-ghost
+    restart: unless-stopped
+    ports:
+      - "2368:2368"
+    environment:
+      url: http://192.168.7.117:2368
+      database__client: mysql
+      database__connection__host: ghost-db
+      database__connection__user: ghost
+      database__connection__password: ghostdbpass2026
+      database__connection__database: ghost
+      NODE_ENV: production
+    volumes:
+      - ghost_content:/var/lib/ghost/content
+    networks:
+      - web
+    depends_on:
+      ghost-db:
+        condition: service_healthy
+
+  ghost-db:
+    image: mysql:8.0
+    container_name: hmb-ghost-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ghostrootpass2026
+      MYSQL_DATABASE: ghost
+      MYSQL_USER: ghost
+      MYSQL_PASSWORD: ghostdbpass2026
+    volumes:
+      - ghost_db:/var/lib/mysql
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: hmb-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_HOST: 0.0.0.0
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://192.168.7.117:5678/
+      GENERIC_TIMEZONE: America/New_York
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
+
+volumes:
+  ghost_content:
+  ghost_db:
+  n8n_data:

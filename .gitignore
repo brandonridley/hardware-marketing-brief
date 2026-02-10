@@ -1,0 +1,4 @@
+# Docker volumes (data is in named volumes)
+*.env.local
+node_modules/
+.DS_Store
